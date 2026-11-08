@@ -11,7 +11,7 @@ Plumbing (installing a P-trap) is the first apprenticeship module. The goal is e
 | | |
 |---|---|
 | **Live app** | https://pipesense-training.vercel.app — opens the hands-free stage demo; *Try it with your hands* starts the camera lesson |
-| **Demo video (2:40)** | see the [latest release](../../releases/latest) |
+| **Demo video (1:53)** | [watch / download](https://github.com/Icybeverage/pipesense/releases/tag/v1.0-hackathon) |
 | **Run time** | ~60 s hands-free demo · camera lesson works in any modern browser (HTTPS) |
 
 ## What happens in the demo
