@@ -1170,7 +1170,9 @@ export function createGlove(side) {
   const NAT_DELAY_CLOSE = [0, 0.05, 0.105, 0.165];
   const NAT_DELAY_OPEN = [0, 0.03, 0.06, 0.09];
   const NAT_COUPLE = [0.86, 1.0, 1.16];
-  const NAT_IDLE_AMP = [0, 0.022, 0.028, 0.034];
+  const NAT_IDLE_AMP = [0, 0.035, 0.045, 0.055];
+  // Power grip: ring and pinky wrap further than the middle finger.
+  const NAT_GRIP_EXTRA = [0, 0, 0.06, 0.12];
   const NAT_OMEGA = [0, 21, 19, 17];
   const NAT_TRACK_OMEGA = 46; // ~43 ms effective lag on camera joints
   const natural = {
@@ -1266,6 +1268,7 @@ export function createGlove(side) {
         const idle = 0.55 * Math.sin(t * 1.45 + phase) + 0.3 * Math.sin(t * 3.7 + phase * 1.3)
           + 0.45 * Math.sin(t * 1.1 + natural.seed);
         goal += NAT_IDLE_AMP[fi] * idle * open * (1 - grasp);
+        goal += NAT_GRIP_EXTRA[fi] * grasp * goal;
         natSpring(st, clamp(goal, 0, 1), NAT_OMEGA[fi], step);
         const x = clamp(st.x, 0, 1);
         for (let ji = 0; ji < 3; ji++) {
