@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PipeSense — Job simulation pilot</title>
+  <meta name="description" content="A hands-on job simulation pilot. Scenario 1: install a plumbing P-trap with your own tracked hands, scored deterministically, with a coach that changes the next attempt." />
+  <meta name="theme-color" content="#05080e" />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="scene" tabindex="0"
+    aria-label="First-person workshop view under a sink: sink tailpiece above, wall drain arm behind, P-trap and slip nuts on the bench, two virtual work gloves in the foreground."></canvas>
+
+  <header class="brand" aria-hidden="false">
+    <h1>Pipe<span>Sense</span></h1>
+    <p>Job simulation pilot · Scenario 1: P-trap</p>
+  </header>
+
+  <div class="cam" id="cam-wrap" hidden>
+    <div class="cam-stage">
+      <video id="cam-video" autoplay playsinline muted></video>
+      <canvas id="hand-overlay" aria-hidden="true"></canvas>
+    </div>
+    <p class="cam-status" id="cam-status" data-state="idle" role="status" aria-live="polite">Camera off</p>
+    <p class="cam-status cam-depth" id="cam-depth" hidden>Simulated depth · L <b id="depth-left">—</b> · R <b id="depth-right">—</b></p>
+  </div>
+
+  <section class="intro" id="intro" aria-label="Lesson setup">
+    <div class="flow-shell">
+      <header class="flow-head">
+        <h2>Scenario 1 · Install a P-trap</h2>
+        <div class="flow-progress" role="progressbar" aria-label="Lesson setup progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1"><i class="active"></i><i></i><i></i></div>
+      </header>
+
+      <section class="flow-stage active" id="stage-setup" aria-labelledby="setup-title">
+        <div class="stage-copy">
+          <span class="stage-kicker">01 · Calibrate</span>
+          <h3 id="setup-title">Put your hands in the workspace</h3>
+          <p>Enable hand tracking, raise both hands in frame, and hold still until calibration is complete.</p>
+          <div class="tracking-readout" id="tracking-readout" data-state="idle">
+            <span class="tracking-dot"></span>
+            <div><strong id="tracking-title">Camera required — not connected</strong><small id="tracking-detail">Enable the camera to map your hands to the virtual work gloves.</small></div>
+          </div>
+          <div class="stage-actions">
+            <button class="btn primary" id="btn-setup-camera" type="button">Enable hand tracking</button>
+            <button class="btn" id="btn-tour" type="button">Continue to tutorial</button>
+            <button class="btn" id="btn-guided-practice" type="button">Watch guided practice</button>
+          </div>
+          <p class="stage-note" id="guided-note">Guided practice uses simulated hands: a practice aid, <b>not certification</b>.</p>
+        </div>
+        <figure class="reference-clip">
+          <video id="ref-clip" autoplay muted loop playsinline preload="metadata"
+            poster="https://raw.githubusercontent.com/Icybeverage/pipesense-training/main/web/assets/real-world-hand-tracking-poster.jpg"
+            aria-label="A learner in safety gear moves both gloved hands in front of a wall display while tracked hand landmarks follow each hand.">
+            <source src="https://raw.githubusercontent.com/Icybeverage/pipesense-training/main/web/assets/real-world-hand-tracking.mp4" type="video/mp4" />
+          </video>
+          <figcaption>Real-world hand tracking</figcaption>
+        </figure>
+      </section>
+
+      <section class="flow-stage" id="stage-tutorial" hidden aria-labelledby="tutorial-title">
+        <div class="tutorial-heading">
+          <div><span class="stage-kicker">02 · Visual walkthrough</span><h3 id="tutorial-title">Learn the sequence</h3></div>
+          <p>Review five steps, then start.</p>
+        </div>
+        <div class="tutorial-deck" id="tutorial-deck" tabindex="0" aria-label="P-trap procedure cards"></div>
+        <div class="deck-controls">
+          <button class="btn ghost" id="btn-tour-back" type="button">Back</button>
+          <span id="deck-position">1 / 5</span>
+          <button class="btn" id="btn-tour-prev" type="button">Previous</button>
+          <button class="btn" id="btn-tour-next" type="button">Next step</button>
+          <button class="btn primary" id="btn-go" type="button" hidden>Start simulation</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="hud" aria-label="Coaching">
+    <p class="caption" id="caption" role="status" aria-live="polite" aria-atomic="true">Close the supply valve to isolate the drain line.</p>
+    <p class="attrib" id="attrib"></p>
+    <p class="strategy-chip" id="strategy-chip" hidden></p>
+  </section>
+
+  <section class="panel steps" id="steps" hidden aria-label="Step checklist">
+    <h3>Procedure</h3>
+    <ol id="steps-list"></ol>
+  </section>
+
+  <section class="panel align" id="align" hidden aria-label="Socket alignment readout">
+    <h3>Socket alignment — live</h3>
+    <div id="align-rows"></div>
+    <p class="align-note" id="align-note"></p>
+  </section>
+
+  <section class="practice-card" id="practice-card" hidden aria-live="polite">
+    <div class="practice-card-top"><span id="practice-count">STEP 01 / 05</span><b id="practice-status">IN PROGRESS</b></div>
+    <h3 id="practice-title">Close the supply valve</h3>
+    <p id="practice-hint">Pinch the red handle and rotate until it stops.</p>
+    <div class="practice-progress"><i id="practice-progress"></i></div>
+  </section>
+
+  <section class="loop-card" id="loop-card" hidden aria-label="Adaptive training loop">
+    <header><span>Learning loop</span><b id="loop-source">Weights &amp; Biases ready</b></header>
+    <div class="loop-track" aria-label="Observe coach adapt retry evaluate">
+      <span data-loop="observe">Observe</span><i></i><span data-loop="coach">Coach</span><i></i><span data-loop="adapt">Adapt</span><i></i><span data-loop="retry">Retry</span><i></i><span data-loop="evaluate">Evaluate</span>
+    </div>
+    <p id="loop-message">Your first attempt becomes the baseline.</p>
+  </section>
+
+  <footer class="controls" id="controls">
+    <button class="btn" id="btn-camera" type="button" aria-pressed="false">Camera: off</button>
+    <button class="btn" id="btn-voice" type="button" aria-pressed="false">Maya: off</button>
+    <button class="btn" id="btn-guide" type="button">Tutorial</button>
+    <button class="btn" id="btn-retry" type="button">Retry</button>
+    <button class="btn" id="btn-drop" type="button">Release hands</button>
+    <details class="more" id="more-tools"><summary class="btn ghost">Views</summary><div class="more-menu">
+      <label class="cmd-wrap"><span class="sr-only">Command</span><input class="cmd" id="cmd" type="text" autocomplete="off" spellcheck="false" placeholder="Demo command…" /></label>
+      <button class="btn ghost" id="btn-story" type="button" aria-expanded="false" aria-controls="story">Weights &amp; Biases</button>
+      <button class="btn ghost" id="btn-judge" type="button" aria-expanded="false" aria-controls="judge">Judge evidence</button>
+      <a class="btn ghost" href="https://github.com/emmalieker/anatomical-hand-model" target="_blank" rel="noopener noreferrer" title="Anatomical hand model by Emma L. D. Lieker · CC BY-NC 4.0">Hand model credit</a>
+    </div></details>
+  </footer>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <p class="practice-banner" id="practice-banner" hidden>Guided practice · simulated hands · not certification</p>
+
+  <aside class="story" id="story" hidden aria-label="Weights &amp; Biases Weave evidence slide">
+    <header class="wb-head">
+      <div class="wb-head-copy">
+        <span class="wb-kicker">Weights &amp; Biases Weave · training loop</span>
+        <h2>Every attempt becomes evidence for the next one</h2>
+      </div>
+      <button class="btn ghost" id="btn-story-close" type="button">Close</button>
+    </header>
+
+    <p class="wb-hero">The browser scores the plumbing deterministically. Weights &amp; Biases Inference rewrites the coaching, the learner retries, and Weave compares the score delta.</p>
+
+    <ol class="wb-loop" aria-label="Observe, Coach, Adapt, Retry, Evaluate">
+      <li class="wb-step"><b>Observe</b><span>Geometry + sequence telemetry</span></li>
+      <li class="wb-step"><b>Coach</b><span>Inference rewrites the hint</span></li>
+      <li class="wb-step"><b>Adapt</b><span>Bounded intervention chosen</span></li>
+      <li class="wb-step"><b>Retry</b><span>Simulation changes first</span></li>
+      <li class="wb-step"><b>Evaluate</b><span>Score delta compared</span></li>
+    </ol>
+
+    <section class="wb-card" aria-label="Latest evaluated attempt">
+      <header class="wb-card-head">
+        <h3>Latest evaluated attempt</h3>
+        <span class="wb-badge" id="story-certification" data-tone="muted">Pending</span>
+      </header>
+      <dl class="wb-grid">
+        <div class="wb-item"><dt>Score delta</dt><dd id="story-score">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Issue</dt><dd id="story-issue">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Intervention · verdict</dt><dd id="story-strategy">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Weights &amp; Biases Inference</dt><dd id="story-inference" data-dot="muted">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Weave trace</dt><dd id="story-weave" data-dot="muted">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Input provenance</dt><dd id="story-input">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Camera-control grade</dt><dd id="story-webcam" data-dot="muted">Pending — no evaluated attempt yet</dd></div>
+        <div class="wb-item"><dt>Result</dt><dd id="story-result">Pending — no evaluated attempt yet</dd></div>
+      </dl>
+      <p class="wb-note" id="story-note">Run one evaluation to populate real evidence. This slide never fabricates values.</p>
+    </section>
+
+    <p class="wb-boundary"><b>Deterministic scoring</b> decides geometry, sequence and pass/fail in the browser; <b>the model</b> only rewrites coaching language and the bounded next intervention. No certification is issued or implied.</p>
+  </aside>
+
+  <aside class="judge" id="judge" hidden aria-label="Judge evidence view">
+    <header class="judge-head">
+      <h2>Judge view — evidence only</h2>
+      <button class="btn ghost" id="btn-judge-close" type="button">Close</button>
+    </header>
+    <p class="judge-note">Everything below is either raw browser state, the exact request body, or the backend response. Anything the backend did not return is labelled local fallback. Configured endpoints are not claimed as live.</p>
+
+    <section class="judge-sec">
+      <h3>Connection &amp; status</h3>
+      <div class="judge-actions">
+        <button class="btn ghost" id="btn-health" type="button">Probe GET /health</button>
+        <button class="btn ghost" id="btn-live" type="button">Connect live agent</button>
+      </div>
+      <pre id="judge-conn">No health probe yet.</pre>
+    </section>
+
+    <section class="judge-sec">
+      <h3>Last request — POST /v1/attempts/evaluate</h3>
+      <pre id="judge-req">No evaluation request yet.</pre>
+    </section>
+
+    <section class="judge-sec">
+      <h3>Last response — backend or local fallback</h3>
+      <pre id="judge-res">No evaluation response yet.</pre>
+    </section>
+
+    <section class="judge-sec">
+      <h3>Attempt history — deterministic score, strategy, verdict</h3>
+      <div class="judge-body" id="judge-attempts">No attempts yet.</div>
+    </section>
+
+    <section class="judge-sec">
+      <h3>Live geometry checks — computed in this browser</h3>
+      <pre id="judge-geom"></pre>
+    </section>
+  </aside>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

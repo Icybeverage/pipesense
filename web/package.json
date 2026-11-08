@@ -1,0 +1,12 @@
+{
+  "name": "pipesense-web",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "PipeSense hackathon browser demo: first-person P-trap assembly with virtual work gloves, deterministic geometry scoring, optional MediaPipe hand tracking, adaptive coaching and voice fallback.",
+  "scripts": {
+    "start": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "check": "node --check app.js && node --check src/sim.js && node --check src/world.js && node --check src/props.js && node --check src/gloves.js && node --check src/fx.js && node --check src/handtrack.js && node --check src/synth.js && node --check src/input.js && node --check src/interaction.js && node --check src/net.js && node --check src/voice.js && node --check src/story.js",
+    "test": "node sim.test.mjs && node handtrack.test.mjs && node synth.test.mjs && node input.test.mjs && node story.test.mjs"
+  }
+}
